@@ -57,8 +57,6 @@ public class PickupProgramNodeContribution implements ProgramNodeContribution{
 
 	private final int number;
 	private final int pallet;
-	
-	private static long DELAY_READ = 500L;
 
 	private final PoseFactory poseFactory;
 	private final JointPositionFactory jointPositionFactory;
@@ -237,15 +235,6 @@ public class PickupProgramNodeContribution implements ProgramNodeContribution{
 			// turns off suction
 			valve_out.setValue(true);
 			this.view.valveButtonColor(true);
-			
-			final Timer timerOnDelay = new Timer();
-			timerOnDelay.schedule(new TimerTask() {
-				public void run() {
-					calculatePressure(pressure_in);
-				}
-			}, DELAY_READ);
-			
-			return;
 		}
 		
 		final Runnable refresher = new Runnable() {
@@ -259,7 +248,7 @@ public class PickupProgramNodeContribution implements ProgramNodeContribution{
 		final ScheduledFuture<?> refreshHandle = scheduler.scheduleAtFixedRate(refresher, 500, 250, TimeUnit.MILLISECONDS);
 		scheduler.schedule(new Runnable() {
 			public void run() { refreshHandle.cancel(true); }
-		}, 3, TimeUnit.SECONDS);
+		}, 2, TimeUnit.SECONDS);
 	}
 	
 	private double calculatePressure(AnalogIO input) {
@@ -268,17 +257,17 @@ public class PickupProgramNodeContribution implements ProgramNodeContribution{
 		// all numbers for sMC ISE30A sensor; range is inverted, cause we are measuring vacuum
 		// the full range is: 0.6V -> -1.01bar; 5V -> 10bar
 		
-		// voltage: 0.6V -> -1010mbar; 1V -> 0mbar
+		// voltage: 0.6V -> -1000mbar; 1V -> 0mbar
 		if (input.isVoltage() && inputValue < 1.01 && inputValue > 0.59) {
 			normalized = (1.0 - input.getValue()) / (1.0 - 0.6);
-			return normalized * 1010.0;
+			return normalized * 1000.0;
 		}
-		// current: 2.4mA -> 1010mbar; 4mA - > 0mbar
+		// current: 2.4mA -> 1000mbar; 4mA - > 0mbar
 		// TECHNICALLY THIS SENSOR CANNOT BE USED HERE
 		// BECAUSE UR'S ANALOG INPUT IN CURRENT MODE IS 4-20mA
 		else if (input.isCurrent() && inputValue < 0.0041 && inputValue > 0.0023) {
 			normalized = (0.004 - input.getValue()) / (0.004 - 0.0024);
-			return normalized * 1010.0;
+			return normalized * 1000.0;
 		} else {
 			return 0.0;
 		}
