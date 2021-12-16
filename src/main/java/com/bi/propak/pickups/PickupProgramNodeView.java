@@ -3,6 +3,7 @@ package com.bi.propak.pickups;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -47,9 +48,12 @@ public class PickupProgramNodeView implements SwingProgramNodeView<PickupProgram
 
 	JButton abovePalletSetButton = new JButton();
 	JButton abovePalletMoveButton = new JButton();
+	
 	JLabel abovePalletDescription = new JLabel();
 	JLabel abovePalletDefined = new JLabel();
 	JLabel clipboardLabel = new JLabel();
+	
+	JLabel pressureLabel = new JLabel();
 
 	JButton valveButton = new JButton();
 	JButton copyButton = new JButton();
@@ -172,8 +176,20 @@ public class PickupProgramNodeView implements SwingProgramNodeView<PickupProgram
 		c.weighty = 1.0;
 		c.weightx = 1.0;
 		c.insets = new Insets(10, 0, 6, 0);
-		c.anchor = GridBagConstraints.CENTER;
+		c.anchor = GridBagConstraints.LINE_START;
 		panel.add(valveButton, c);
+		
+		//	ADD THE PRESSURE READOUT FROM THE ANALOGUE SENSOR
+		pressureLabel.setText("PRESSURE");
+		//Font f = pressureLabel.getFont();
+		//pressureLabel.setFont(f.deriveFont(Font.BOLD));
+		//pressureLabel.setFont(f.deriveFont(18.0f));
+		pressureLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+		c.gridx = 1;
+		c.weightx = 1.0;
+		c.anchor = GridBagConstraints.LINE_END;
+		c.insets = new Insets(0, 0, 0, 20);
+		panel.add(pressureLabel, c);
 
 		//	ADD BUTTONS TO COPY AND PASTE PICKUP POSES
 		//	LABEL IN THE MIDDLE TO SEE THE CONTENTS OF THE CLIPBOARD
@@ -300,6 +316,14 @@ public class PickupProgramNodeView implements SwingProgramNodeView<PickupProgram
 			} else {
 				valveButton.setText("Turn On Suction");
 			}
+		}
+	}
+	
+	public void setPressureDisplay(double input) {
+		if ("pl".contentEquals(Locale.getDefault().getLanguage())) {
+			pressureLabel.setText("<html>Podciśnienie: " + "<b><font size=+1>" + Double.valueOf(input).intValue() + "</font></b>" + " mbar</html>");
+		} else {
+			pressureLabel.setText("<html>Vacuum: " + "<b><font size=+1>" + Double.valueOf(input).intValue() + "</font></b>" + " mbar</html>");
 		}
 	}
 

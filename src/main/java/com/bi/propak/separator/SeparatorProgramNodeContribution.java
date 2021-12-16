@@ -8,6 +8,12 @@ import java.io.IOException;
 import java.io.FileWriter;
 import java.io.FileNotFoundException;
 import java.util.Scanner;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import com.ur.urcap.api.contribution.ProgramNodeContribution;
 import com.ur.urcap.api.contribution.installation.CreationContext.NodeCreationType;
@@ -15,6 +21,7 @@ import com.ur.urcap.api.contribution.program.CreationContext;
 import com.ur.urcap.api.contribution.program.ProgramAPIProvider;
 import com.ur.urcap.api.domain.UserInterfaceAPI;
 import com.ur.urcap.api.domain.data.DataModel;
+import com.ur.urcap.api.domain.io.AnalogIO;
 import com.ur.urcap.api.domain.io.DigitalIO;
 import com.ur.urcap.api.domain.io.IOModel;
 import com.ur.urcap.api.domain.script.ScriptWriter;
@@ -41,11 +48,14 @@ public class SeparatorProgramNodeContribution implements ProgramNodeContribution
 	private final RobotMovement robotMovement;
 	private final IOModel ioModel;
 	private DigitalIO valve_out;
+	private AnalogIO pressure_in;
 
 	private final int number;
 	private final int pallet;
 
 	private final static int NUMBER_OF_POSITIONS = 6;
+	
+	private static long DELAY_READ = 500L;
 
 	private boolean[] definedPoses = new boolean[NUMBER_OF_POSITIONS];
 	private final static String[] poseNames = {"ABOVE_SEPARATOR",
@@ -60,6 +70,8 @@ public class SeparatorProgramNodeContribution implements ProgramNodeContribution
 	private final JointPositionFactory jointPositionFactory;
 	private final Pose emptyPose;
 	private final JointPositions emptyJoints;
+	
+	private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 	
 	public SeparatorProgramNodeContribution(ProgramAPIProvider provider, DataModel model, SeparatorProgramNodeView view, CreationContext context) {
 		this.apiProvider = provider;
@@ -89,6 +101,8 @@ public class SeparatorProgramNodeContribution implements ProgramNodeContribution
 
 		this.jointPositionFactory = apiProvider.getProgramAPI().getValueFactoryProvider().getJointPositionFactory();
 		this.emptyJoints = jointPositionFactory.createJointPositions(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Angle.Unit.RAD);
+		
+		this.pressure_in = getAnalogIO("analog_in[0]");
 
 		if (context.getNodeCreationType().equals(NodeCreationType.NEW)) {
 			for (int i = 0; i < NUMBER_OF_POSITIONS; ++i) {
@@ -110,6 +124,7 @@ public class SeparatorProgramNodeContribution implements ProgramNodeContribution
 
 		valve_out = getDigitalIO("digital_out[0]");
 		view.valveButtonColor(valve_out.getValue());
+		view.setPressureDisplay(calculatePressure(pressure_in));
 		
 		if (existsClipboard()) {
 			view.clipboardSetText(refNumberFromClipboard(), palletFromClipboard());
@@ -281,14 +296,58 @@ public class SeparatorProgramNodeContribution implements ProgramNodeContribution
 	public void activateValveAction() {
 		valve_out = getDigitalIO("digital_out[0]");
 		if (valve_out.getValue()) {
+			// turns on suction
 			valve_out.setValue(false);
 			this.view.valveButtonColor(false);
 		} else {
+			// turns off suction
 			valve_out.setValue(true);
 			this.view.valveButtonColor(true);
+			
+			final Timer timerOnDelay = new Timer();
+			timerOnDelay.schedule(new TimerTask() {
+				public void run() {
+					calculatePressure(pressure_in);
+				}
+			}, DELAY_READ);
+			
+			return;
 		}
 		
-		// RANDOM TESTS
+		final Runnable refresher = new Runnable() {
+			public void run() { 
+				view.setPressureDisplay(calculatePressure(pressure_in));
+//				String actVal = pressure_in.getValueStr();
+//				String calVal = Double.toString(calculatePressure(pressure_in));
+//				System.out.println("act: " + actVal.substring(0, Math.min(actVal.length(), 8)) + " calc: " + calVal);
+			}
+		};
+		final ScheduledFuture<?> refreshHandle = scheduler.scheduleAtFixedRate(refresher, 500, 250, TimeUnit.MILLISECONDS);
+		scheduler.schedule(new Runnable() {
+			public void run() { refreshHandle.cancel(true); }
+		}, 3, TimeUnit.SECONDS);
+	}
+	
+	private double calculatePressure(AnalogIO input) {
+		double inputValue = input.getValue();
+		double normalized = 0.0;
+		// all numbers for sMC ISE30A sensor; range is inverted, cause we are measuring vacuum
+		// the full range is: 0.6V -> -1.01bar; 5V -> 10bar
+		
+		// voltage: 0.6V -> -1010mbar; 1V -> 0mbar
+		if (input.isVoltage() && inputValue < 1.01 && inputValue > 0.59) {
+			normalized = (1.0 - input.getValue()) / (1.0 - 0.6);
+			return normalized * 1010.0;
+		}
+		// current: 2.4mA -> 1010mbar; 4mA - > 0mbar
+		// TECHNICALLY THIS SENSOR CANNOT BE USED HERE
+		// BECAUSE UR'S ANALOG INPUT IN CURRENT MODE IS 4-20mA
+		else if (input.isCurrent() && inputValue < 0.0041 && inputValue > 0.0023) {
+			normalized = (0.004 - input.getValue()) / (0.004 - 0.0024);
+			return normalized * 1010.0;
+		} else {
+			return 0.0;
+		}
 	}
 
 	public DigitalIO getDigitalIO(String defaultName) {
@@ -298,6 +357,21 @@ public class SeparatorProgramNodeContribution implements ProgramNodeContribution
 			Iterator<DigitalIO> itr = IOCollection.iterator();
 			while(itr.hasNext()) {
 				DigitalIO thisIO = itr.next();
+				String thisDefaultName = thisIO.getDefaultName();
+				if (thisDefaultName.contentEquals(defaultName)) {
+					return thisIO;
+				}
+			}
+		}
+		return null;
+	}
+	
+	public AnalogIO getAnalogIO(String defaultName) {
+		Collection<AnalogIO> IOCollection = ioModel.getIOs(AnalogIO.class);
+		if (IOCollection.size() > 0) {
+			Iterator<AnalogIO> itr = IOCollection.iterator();
+			while(itr.hasNext()) {
+				AnalogIO thisIO = itr.next();
 				String thisDefaultName = thisIO.getDefaultName();
 				if (thisDefaultName.contentEquals(defaultName)) {
 					return thisIO;

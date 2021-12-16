@@ -7,7 +7,7 @@
 
 	<groupId>com.bi</groupId>
 	<artifactId>propak</artifactId>
-	<version>1.6.0.test</version>
+	<version>1.6.2</version>
 	<name>propak</name>
 	<packaging>bundle</packaging>
 
