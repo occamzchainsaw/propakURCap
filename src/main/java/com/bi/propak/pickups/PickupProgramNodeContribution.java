@@ -40,7 +40,9 @@ import com.ur.urcap.api.domain.value.jointposition.JointPosition;
 import com.ur.urcap.api.domain.value.simple.Angle;
 import com.ur.urcap.api.domain.value.simple.Length;
 
-public class PickupProgramNodeContribution implements ProgramNodeContribution{
+import analogParser.AnalogParameters;
+
+public class PickupProgramNodeContribution implements ProgramNodeContribution, AnalogParameters{
 
 	private final ProgramAPIProvider apiProvider;
 	private DataModel dataModel;
@@ -62,6 +64,13 @@ public class PickupProgramNodeContribution implements ProgramNodeContribution{
 	private final JointPositionFactory jointPositionFactory;
 	private final Pose emptyPose;
 	private final JointPositions emptyJoints;
+	
+	private static final String LOW_V_KEY = "LOW_V";
+	private static final String HIGH_V_KEY = "HIGH_V";
+	private static final String RANGE_P_KEY = "RANGE_P";
+	private static final double DEFAULT_LOW_V = 0.6;
+	private static final double DEFAULT_HIGH_V = 1.0;
+	private static final double DEFAULT_RANGE_P = 1000.0;
 	
 	private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
@@ -120,6 +129,8 @@ public class PickupProgramNodeContribution implements ProgramNodeContribution{
 		if (existsClipboard()) {
 			view.clipboardSetText(refNumberFromClipboard(), palletFromClipboard());
 		}
+		
+		//System.out.println("lowVoltage Passed down: " + dataModel.get(LOW_V_KEY, 0.0));
 	}
 
 	@Override
@@ -499,4 +510,52 @@ public class PickupProgramNodeContribution implements ProgramNodeContribution{
 		return q;
 	}
 
+	
+
+	@Override
+	public void setVoltageLow(final double voltage) {
+		undoRedoManager.recordChanges(new UndoableChanges() {
+			@Override
+			public void executeChanges() {
+				dataModel.set(LOW_V_KEY, voltage);
+			}
+		});
+	}
+
+	@Override
+	public void setVoltageHigh(final double voltage) {
+		undoRedoManager.recordChanges(new UndoableChanges() {
+			@Override
+			public void executeChanges() {
+				dataModel.set(HIGH_V_KEY, voltage);
+			}
+		});
+	}
+
+	@Override
+	public void setPressureRange(final double range) {
+		undoRedoManager.recordChanges(new UndoableChanges() {
+			@Override
+			public void executeChanges() {
+				dataModel.set(RANGE_P_KEY, range);
+			}
+		});
+	}
+
+	@Override
+	public double getVoltageLow() {
+		return dataModel.get(LOW_V_KEY, DEFAULT_LOW_V);
+	}
+
+	@Override
+	public double getVoltageHigh() {
+		return dataModel.get(HIGH_V_KEY, DEFAULT_HIGH_V);
+	}
+
+	@Override
+	public double getPressureRange() {
+		return dataModel.get(RANGE_P_KEY, DEFAULT_RANGE_P);
+	}
+
+	
 }

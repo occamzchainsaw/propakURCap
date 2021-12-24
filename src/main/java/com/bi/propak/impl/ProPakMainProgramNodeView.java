@@ -8,18 +8,26 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.text.DecimalFormat;
 import java.util.Locale;
 
+import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JFormattedTextField;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 
 import com.ur.urcap.api.contribution.ContributionProvider;
 import com.ur.urcap.api.contribution.ViewAPIProvider;
 import com.ur.urcap.api.contribution.program.swing.SwingProgramNodeView;
+import com.ur.urcap.api.domain.userinteraction.keyboard.KeyboardNumberInput;
 
 public class ProPakMainProgramNodeView implements SwingProgramNodeView<ProPakMainProgramNodeContribution>{
 
@@ -34,6 +42,10 @@ public class ProPakMainProgramNodeView implements SwingProgramNodeView<ProPakMai
 	
 	private final static int BUTTON_WIDTH = 180;
 	private final static int BUTTON_HEIGHT = 40;
+	
+	private static final String LOW_V_KEY = "LOW_V";
+	private static final String HIGH_V_KEY = "HIGH_V";
+	private static final String RANGE_P_KEY = "RANGE_P";
 	
 	JLabel homeDescLabel = new JLabel();
 	JLabel leftDescLabel = new JLabel();
@@ -57,6 +69,8 @@ public class ProPakMainProgramNodeView implements SwingProgramNodeView<ProPakMai
 	JLabel clipboardLabel = new JLabel();
 	
 	JLabel logoLabel = new JLabel();
+	
+	JTextField lowVoltageInput = new JTextField();
 	
 	Icon okIcon = new ImageIcon(this.getClass().getResource("ChubbyTick.png"));
 	Icon nokIcon = new ImageIcon(this.getClass().getResource("ChubbyX.png"));
@@ -86,7 +100,7 @@ public class ProPakMainProgramNodeView implements SwingProgramNodeView<ProPakMai
 		c.insets = new Insets(10, 0, 6, 0);
 		c.weightx = 1.0;
 		c.anchor = GridBagConstraints.NORTHWEST;
-		panel.add(homeDescLabel, c);
+		//panel.add(homeDescLabel, c);
 		
 		// defined indicator
 		homeIsDefinedLabel.setVerticalAlignment(JLabel.CENTER);
@@ -94,7 +108,7 @@ public class ProPakMainProgramNodeView implements SwingProgramNodeView<ProPakMai
 		c.gridx = 1;
 		c.weightx = 0.5;
 		homeIsDefinedLabel.setIcon(nokIcon);
-		panel.add(homeIsDefinedLabel, c);
+		//panel.add(homeIsDefinedLabel, c);
 		
 		// set button
 		c.insets = new Insets(0, 0, 6, 0);
@@ -108,7 +122,7 @@ public class ProPakMainProgramNodeView implements SwingProgramNodeView<ProPakMai
 				provider.get().setPositionAction(e.getActionCommand());
 			}
 		});
-		panel.add(homeSetButton, c);
+		//panel.add(homeSetButton, c);
 		
 		// move button
 		c.gridx = 3;
@@ -121,7 +135,7 @@ public class ProPakMainProgramNodeView implements SwingProgramNodeView<ProPakMai
 				provider.get().moveAction(e.getActionCommand());
 			}
 		});
-		panel.add(homeMoveButton, c);
+		//panel.add(homeMoveButton, c);
 		
 		// ABOVE LEFT PALLET
 		c.gridy++;
@@ -143,7 +157,7 @@ public class ProPakMainProgramNodeView implements SwingProgramNodeView<ProPakMai
 		c.insets = new Insets(10, 0, 6, 0);
 		c.weightx = 1.0;
 		c.anchor = GridBagConstraints.NORTHWEST;
-		panel.add(leftDescLabel, c);
+		//panel.add(leftDescLabel, c);
 		
 		// defined indicator
 		leftIsDefinedLabel.setVerticalAlignment(JLabel.CENTER);
@@ -151,7 +165,7 @@ public class ProPakMainProgramNodeView implements SwingProgramNodeView<ProPakMai
 		c.gridx = 1;
 		c.weightx = 0.5;
 		leftIsDefinedLabel.setIcon(nokIcon);
-		panel.add(leftIsDefinedLabel, c);
+		//panel.add(leftIsDefinedLabel, c);
 		
 		// set button
 		c.insets = new Insets(0, 0, 6, 0);
@@ -165,7 +179,7 @@ public class ProPakMainProgramNodeView implements SwingProgramNodeView<ProPakMai
 				provider.get().setPositionAction(e.getActionCommand());
 			}
 		});
-		panel.add(leftSetButton, c);
+		//panel.add(leftSetButton, c);
 		
 		// move button
 		c.gridx = 3;
@@ -178,7 +192,7 @@ public class ProPakMainProgramNodeView implements SwingProgramNodeView<ProPakMai
 				provider.get().moveAction(e.getActionCommand());
 			}
 		});
-		panel.add(leftMoveButton, c);
+		//panel.add(leftMoveButton, c);
 		
 		// ABOVE RIGHT PALLET
 		c.gridy++;
@@ -200,7 +214,7 @@ public class ProPakMainProgramNodeView implements SwingProgramNodeView<ProPakMai
 		c.insets = new Insets(10, 0, 6, 0);
 		c.weightx = 1.0;
 		c.anchor = GridBagConstraints.NORTHWEST;
-		panel.add(rightDescLabel, c);
+		//panel.add(rightDescLabel, c);
 		
 		// defined indicator
 		rightIsDefinedLabel.setVerticalAlignment(JLabel.CENTER);
@@ -208,7 +222,7 @@ public class ProPakMainProgramNodeView implements SwingProgramNodeView<ProPakMai
 		c.gridx = 1;
 		c.weightx = 0.5;
 		rightIsDefinedLabel.setIcon(nokIcon);
-		panel.add(rightIsDefinedLabel, c);
+		//panel.add(rightIsDefinedLabel, c);
 		
 		// set button
 		c.insets = new Insets(0, 0, 6, 0);
@@ -222,7 +236,7 @@ public class ProPakMainProgramNodeView implements SwingProgramNodeView<ProPakMai
 				provider.get().setPositionAction(e.getActionCommand());
 			}
 		});
-		panel.add(rightSetButton, c);
+		//panel.add(rightSetButton, c);
 		
 		// move button
 		c.gridx = 3;
@@ -235,22 +249,33 @@ public class ProPakMainProgramNodeView implements SwingProgramNodeView<ProPakMai
 				provider.get().moveAction(e.getActionCommand());
 			}
 		});
-		panel.add(rightMoveButton, c);
+		//panel.add(rightMoveButton, c);
+		
+		// ANALOG INPUT SETUP STUFF
+		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+		lowVoltageInput.setHorizontalAlignment(JTextField.RIGHT);
+		panel.add(createDoubleInput(lowVoltageInput, "Min Voltage:", new MouseAdapter() {
+			@Override
+			public void mousePressed(MouseEvent e) {
+				KeyboardNumberInput<Double> keyboardInput = provider.get().getKeyboardForDouble();
+				keyboardInput.show(lowVoltageInput, provider.get().getCallbackForDouble(LOW_V_KEY));
+			}
+		}));
 
 		
 		//	PRO PAK LOGO AT THE BOTTOM
-		c.anchor = GridBagConstraints.SOUTH;
-		c.fill = GridBagConstraints.NONE;
-		c.gridx = 0;
-		c.gridy++;
-		c.weightx = 0.5;
-		c.weighty = 1.0;
-		c.gridwidth = 4;
-		c.gridheight = 1;
-		c.ipadx = 0;
-		c.ipady = 0;
-		logoLabel.setIcon(logoIcon);
-		panel.add(logoLabel, c);
+//		c.anchor = GridBagConstraints.SOUTH;
+//		c.fill = GridBagConstraints.NONE;
+//		c.gridx = 0;
+//		c.gridy++;
+//		c.weightx = 0.5;
+//		c.weighty = 1.0;
+//		c.gridwidth = 4;
+//		c.gridheight = 1;
+//		c.ipadx = 0;
+//		c.ipady = 0;
+//		logoLabel.setIcon(logoIcon);
+//		panel.add(logoLabel, c);
 		
 		//	ADD BUTTONS TO COPY AND PASTE PICKUP POSES
 		//	LABEL IN THE MIDDLE TO SEE THE CONTENTS OF THE CLIPBOARD
@@ -274,7 +299,7 @@ public class ProPakMainProgramNodeView implements SwingProgramNodeView<ProPakMai
 		c.weighty = 1.0;
 		c.anchor = GridBagConstraints.SOUTHWEST;
 		c.fill = GridBagConstraints.NONE;
-		panel.add(copyButton, c);
+		//panel.add(copyButton, c);
 
 		//	Clipboard Label
 		clipboardLabel.setText("");
@@ -284,7 +309,7 @@ public class ProPakMainProgramNodeView implements SwingProgramNodeView<ProPakMai
 		clipboardLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 		c.gridx = 1;
 		c.weightx = 1.0;
-		panel.add(clipboardLabel, c);
+		//panel.add(clipboardLabel, c);
 
 		//	Paste
 		pasteButton.setPreferredSize(new Dimension(BUTTON_WIDTH, BUTTON_HEIGHT));
@@ -305,7 +330,7 @@ public class ProPakMainProgramNodeView implements SwingProgramNodeView<ProPakMai
 		c.weightx = 0.3;
 		c.anchor = GridBagConstraints.SOUTHEAST;
 		c.fill = GridBagConstraints.NONE;
-		panel.add(pasteButton, c);
+		//panel.add(pasteButton, c);
 	}
 	
 
@@ -338,6 +363,29 @@ public class ProPakMainProgramNodeView implements SwingProgramNodeView<ProPakMai
 			break;
 		default: return;
 		}
+	}
+	
+	private Box createDoubleInput(JTextField inputField, String labelText, MouseAdapter mouseAdapter) {
+		Box horizontalBox = Box.createHorizontalBox();
+		horizontalBox.setAlignmentX(Component.LEFT_ALIGNMENT);
+		
+		JLabel label = new JLabel(labelText);
+		
+		lowVoltageInput.setFocusable(false);
+		lowVoltageInput.setPreferredSize(new Dimension(120, 40));
+		lowVoltageInput.addMouseListener(mouseAdapter);
+		
+		horizontalBox.add(label);
+		horizontalBox.add(inputField);
+		
+		return horizontalBox;
+	}
+	
+	public void setLowVoltage(Double value) {
+		DecimalFormat df = new DecimalFormat("#0.0");
+		df.setMaximumFractionDigits(1);
+		String stringValue = df.format((double) value);
+		lowVoltageInput.setText(stringValue);
 	}
 	
 	public void enablePasteButton(boolean enable) {

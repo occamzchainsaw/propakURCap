@@ -18,12 +18,17 @@ import com.ur.urcap.api.domain.UserInterfaceAPI;
 import com.ur.urcap.api.domain.data.DataModel;
 import com.ur.urcap.api.domain.program.ProgramModel;
 import com.ur.urcap.api.domain.program.nodes.ProgramNodeFactory;
+import com.ur.urcap.api.domain.program.nodes.contributable.URCapProgramNode;
+import com.ur.urcap.api.domain.program.structure.ProgramNodeVisitor;
 import com.ur.urcap.api.domain.program.structure.TreeNode;
 import com.ur.urcap.api.domain.program.structure.TreeStructureException;
 import com.ur.urcap.api.domain.script.ScriptWriter;
 import com.ur.urcap.api.domain.undoredo.UndoRedoManager;
 import com.ur.urcap.api.domain.undoredo.UndoableChanges;
 import com.ur.urcap.api.domain.userinteraction.RobotPositionCallback;
+import com.ur.urcap.api.domain.userinteraction.keyboard.KeyboardInputCallback;
+import com.ur.urcap.api.domain.userinteraction.keyboard.KeyboardInputFactory;
+import com.ur.urcap.api.domain.userinteraction.keyboard.KeyboardNumberInput;
 import com.ur.urcap.api.domain.userinteraction.robot.movement.MovementCompleteEvent;
 import com.ur.urcap.api.domain.userinteraction.robot.movement.RobotMovement;
 import com.ur.urcap.api.domain.userinteraction.robot.movement.RobotMovementCallback;
@@ -32,6 +37,8 @@ import com.ur.urcap.api.domain.value.jointposition.JointPositions;
 import com.ur.urcap.api.domain.value.jointposition.JointPosition;
 import com.ur.urcap.api.domain.value.simple.Angle;
 import com.ur.urcap.api.domain.value.simple.Length;
+
+import analogParser.AnalogParameters;
 
 import com.ur.urcap.api.domain.value.PoseFactory;
 import com.ur.urcap.api.domain.value.jointposition.JointPositionFactory;
@@ -44,6 +51,7 @@ public class ProPakMainProgramNodeContribution implements ProgramNodeContributio
 	private ProPakMainProgramNodeView view;
 	private final UndoRedoManager undoRedoManager;
 	private final RobotMovement robotMovement;
+	private final KeyboardInputFactory keyboardInputFactory;
 
 	private final PoseFactory poseFactory;
 	private final JointPositionFactory jointPositionFactory;
@@ -57,6 +65,13 @@ public class ProPakMainProgramNodeContribution implements ProgramNodeContributio
 
 	private boolean IS_NAMED;
 	private String TITLE;
+	
+	private static final String LOW_V_KEY = "LOW_V";
+	private static final String HIGH_V_KEY = "HIGH_V";
+	private static final String RANGE_P_KEY = "RANGE_P";
+	private static final double DEFAULT_LOW_V = 0.6;
+	private static final double DEFAULT_HIGH_V = 1.0;
+	private static final double DEFAULT_RANGE_P = 1000.0;
 
 	private final int number;
 	
@@ -92,6 +107,8 @@ public class ProPakMainProgramNodeContribution implements ProgramNodeContributio
 		}
 
 		this.emptyPose = poseFactory.createPose(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Length.Unit.M, Angle.Unit.RAD);
+		
+		this.keyboardInputFactory = apiProvider.getUserInterfaceAPI().getUserInteraction().getKeyboardInputFactory();
 
 		if (context.getNodeCreationType().equals(NodeCreationType.NEW)) {
 			dataModel.set("ABOVE_LEFT", this.emptyPose);
@@ -495,4 +512,61 @@ public class ProPakMainProgramNodeContribution implements ProgramNodeContributio
 		return q;
 	}
 
+	public KeyboardNumberInput<Double> getKeyboardForDouble() {
+		KeyboardNumberInput<Double> keyboard = keyboardInputFactory.createPositiveDoubleKeypadInput();
+		return keyboard;
+	}
+	
+	public KeyboardInputCallback<Double> getCallbackForDouble(final String key) {
+		return new KeyboardInputCallback<Double>() {
+
+			@Override
+			public void onOk(Double value) {
+				dataModel.set(key, value);
+				view.setLowVoltage(value);
+				setChildNodeVoltageLow();
+			}
+			
+		};
+	}
+	
+	private void setChildNodeVoltageLow() {
+		TreeNode root = apiProvider.getProgramAPI().getProgramModel().getRootTreeNode(this);
+		root.traverse(new ProgramNodeVisitor() {
+			@Override
+			public void visit(URCapProgramNode node, int index, int depth) {
+				if (node.canGetAs(AnalogParameters.class)) {
+					double voltage = dataModel.get(LOW_V_KEY, DEFAULT_LOW_V);
+					node.getAs(AnalogParameters.class).setVoltageLow(voltage);
+				}
+			}
+		});
+	}
+	
+	public void setChildNodeVoltageHigh() {
+		TreeNode root = apiProvider.getProgramAPI().getProgramModel().getRootTreeNode(this);
+		root.traverse(new ProgramNodeVisitor() {
+			@Override
+			public void visit(URCapProgramNode node, int index, int depth) {
+				if (node.canGetAs(AnalogParameters.class)) {
+					double voltage = dataModel.get(HIGH_V_KEY, DEFAULT_HIGH_V);
+					node.getAs(AnalogParameters.class).setVoltageLow(voltage);
+				}
+			}
+		});
+	}
+	
+	public void setChildNodePressureRange() {
+		TreeNode root = apiProvider.getProgramAPI().getProgramModel().getRootTreeNode(this);
+		root.traverse(new ProgramNodeVisitor() {
+			@Override
+			public void visit(URCapProgramNode node, int index, int depth) {
+				if (node.canGetAs(AnalogParameters.class)) {
+					double range = dataModel.get(RANGE_P_KEY, DEFAULT_RANGE_P);
+					node.getAs(AnalogParameters.class).setVoltageLow(range);
+				}
+			}
+		});
+	}
+	
 }
