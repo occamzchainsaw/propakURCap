@@ -217,14 +217,14 @@ public class PickupProgramNodeContribution implements ProgramNodeContribution{
 	}
 	
 	public void activateValveAction() {
-//		valve_out = getDigitalIO("digital_out[0]");
-//		if (valve_out.getValue()) {
-//			valve_out.setValue(false);
-//			this.view.valveButtonColor(false);
-//		} else {
-//			valve_out.setValue(true);
-//			this.view.valveButtonColor(true);
-//		}
+		valve_out = getDigitalIO("digital_out[0]");
+		if (valve_out.getValue()) {
+			valve_out.setValue(false);
+			this.view.valveButtonColor(false);
+		} else {
+			valve_out.setValue(true);
+			this.view.valveButtonColor(true);
+		}
 		
 		pressure_in = getAnalogIO("analog_out[0]");
 		System.out.println(pressure_in.getValueStr());
