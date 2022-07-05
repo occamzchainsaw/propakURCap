@@ -8,6 +8,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.String;
 
+import com.bi.propak.before.BeforeProgramNodeService;
 import com.bi.propak.pickups.PickupProgramNodeService;
 import com.bi.propak.separator.SeparatorProgramNodeService;
 import com.ur.urcap.api.contribution.ProgramNodeContribution;
@@ -117,9 +118,11 @@ public class ProPakMainProgramNodeContribution implements ProgramNodeContributio
 				try {
 					// Add child nodes
 					// LEFT
+					rootNode.addChild(nodeFactory.createURCapProgramNode(BeforeProgramNodeService.class));
 					rootNode.addChild(nodeFactory.createURCapProgramNode(PickupProgramNodeService.class));
 					rootNode.addChild(nodeFactory.createURCapProgramNode(SeparatorProgramNodeService.class));
 					// RIGHT
+					rootNode.addChild(nodeFactory.createURCapProgramNode(BeforeProgramNodeService.class));
 					rootNode.addChild(nodeFactory.createURCapProgramNode(PickupProgramNodeService.class));
 					rootNode.addChild(nodeFactory.createURCapProgramNode(SeparatorProgramNodeService.class));
 

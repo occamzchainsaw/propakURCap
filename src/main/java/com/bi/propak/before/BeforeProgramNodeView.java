@@ -1,4 +1,4 @@
-package com.bi.propak.pickups;
+package com.bi.propak.before;
 
 import java.awt.Color;
 import java.awt.Component;
@@ -22,14 +22,14 @@ import com.ur.urcap.api.contribution.ContributionProvider;
 import com.ur.urcap.api.contribution.ViewAPIProvider;
 import com.ur.urcap.api.contribution.program.swing.SwingProgramNodeView;
 
-public class PickupProgramNodeView implements SwingProgramNodeView<PickupProgramNodeContribution>{
+public class BeforeProgramNodeView implements SwingProgramNodeView<BeforeProgramNodeContribution>{
 
 	@SuppressWarnings("unused")
 	private final ViewAPIProvider apiProvider;
 	public int NODE_COUNT;
 	public boolean CT_FACH;
 	
-	public PickupProgramNodeView(final ViewAPIProvider provider) {
+	public BeforeProgramNodeView(final ViewAPIProvider provider) {
 		this.apiProvider = provider;
 		this.NODE_COUNT = 0;
 		this.CT_FACH = false;
@@ -60,7 +60,7 @@ public class PickupProgramNodeView implements SwingProgramNodeView<PickupProgram
 	Icon trashIcon = new ImageIcon(this.getClass().getResource("/ChubbyTrash.png"));
 
 	@Override
-	public void buildUI(final JPanel panel, final ContributionProvider<PickupProgramNodeContribution> provider) {
+	public void buildUI(final JPanel panel, final ContributionProvider<BeforeProgramNodeContribution> provider) {
 		panel.setLayout(new GridBagLayout());
 		final GridBagConstraints c = new GridBagConstraints();
 

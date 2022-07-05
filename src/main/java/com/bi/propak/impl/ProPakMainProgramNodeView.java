@@ -58,9 +58,9 @@ public class ProPakMainProgramNodeView implements SwingProgramNodeView<ProPakMai
 	
 	JLabel logoLabel = new JLabel();
 	
-	Icon okIcon = new ImageIcon(this.getClass().getResource("ChubbyTick.png"));
-	Icon nokIcon = new ImageIcon(this.getClass().getResource("ChubbyX.png"));
-	Icon logoIcon = new ImageIcon(this.getClass().getResource("ProPakLogo_480.png"));
+	Icon okIcon = new ImageIcon(this.getClass().getResource("/ChubbyTick.png"));
+	Icon nokIcon = new ImageIcon(this.getClass().getResource("/ChubbyX.png"));
+	Icon logoIcon = new ImageIcon(this.getClass().getResource("/ProPakLogo_480.png"));
 
 	@Override
 	public void buildUI(JPanel panel, final ContributionProvider<ProPakMainProgramNodeContribution> provider) {
