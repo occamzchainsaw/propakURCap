@@ -1,15 +1,11 @@
 package com.bi.propak.before;
 
-import java.util.Collection;
-import java.util.Iterator;
 import java.util.Locale;
 import java.io.File;
 import java.io.IOException;
 import java.io.FileWriter;
 import java.io.FileNotFoundException;
 import java.util.Scanner;
-import java.util.Timer;
-import java.util.TimerTask;
 
 import com.ur.urcap.api.contribution.ProgramNodeContribution;
 import com.ur.urcap.api.contribution.installation.CreationContext.NodeCreationType;
@@ -17,10 +13,6 @@ import com.ur.urcap.api.contribution.program.CreationContext;
 import com.ur.urcap.api.contribution.program.ProgramAPIProvider;
 import com.ur.urcap.api.domain.UserInterfaceAPI;
 import com.ur.urcap.api.domain.data.DataModel;
-import com.ur.urcap.api.domain.io.DigitalIO;
-import com.ur.urcap.api.domain.io.AnalogIO;
-import com.ur.urcap.api.domain.io.IO;
-import com.ur.urcap.api.domain.io.IOModel;
 import com.ur.urcap.api.domain.script.ScriptWriter;
 import com.ur.urcap.api.domain.undoredo.UndoRedoManager;
 import com.ur.urcap.api.domain.undoredo.UndoableChanges;
@@ -43,9 +35,6 @@ public class BeforeProgramNodeContribution implements ProgramNodeContribution{
 	private BeforeProgramNodeView view;
 	private final UndoRedoManager undoRedoManager;
 	private final RobotMovement robotMovement;
-	private final IOModel ioModel;
-	private DigitalIO valve_out;
-	private AnalogIO pressure_in;
 
 	private final static int NUMBER_OF_POSITIONS = 8;
 	
@@ -59,7 +48,7 @@ public class BeforeProgramNodeContribution implements ProgramNodeContribution{
 	private final Pose emptyPose;
 	private final JointPositions emptyJoints;
 
-	private final static String fileName = "pickup_clipboard.txt";
+	private final static String fileName = "before_pickup_clipboard.txt";
 	
 	public BeforeProgramNodeContribution(ProgramAPIProvider provider, DataModel model, BeforeProgramNodeView view, CreationContext context) {
 		this.apiProvider = provider;
@@ -80,7 +69,6 @@ public class BeforeProgramNodeContribution implements ProgramNodeContribution{
 			view.resetNodeCounter();
 		}
 		this.undoRedoManager = apiProvider.getProgramAPI().getUndoRedoManager();
-		this.ioModel = apiProvider.getProgramAPI().getIOModel();
 		
 		this.robotMovement = apiProvider.getUserInterfaceAPI().getUserInteraction().getRobotMovement();
 
@@ -102,11 +90,8 @@ public class BeforeProgramNodeContribution implements ProgramNodeContribution{
 	@Override
 	public void openView() {
 		for (int i = 0; i < NUMBER_OF_POSITIONS; ++i) {
-			Pose p = dataModel.get("PICKUP_" + String.valueOf(i), emptyPose);
-			setPoseDefined("PICKUP_" + String.valueOf(i));
+			setPoseDefined("POSE_" + String.valueOf(i));
 		}
-		valve_out = getDigitalIO("digital_out[0]");
-		view.valveButtonColor(valve_out.getValue());
 
 		if (existsClipboard()) {
 			view.clipboardSetText(refNumberFromClipboard(), palletFromClipboard());
@@ -125,15 +110,15 @@ public class BeforeProgramNodeContribution implements ProgramNodeContribution{
 		String title = "";
 		if("pl".equals(Locale.getDefault().getLanguage())) {
 			if (pallet.equals("left")) {
-				title = "Pozycje Przed Pobraniem - Paleta Lewa";
+				title = "Pozycje Przed Pobraniem - Lewa";
 			} else {
-				title = "Pozycje Przed Pobraniem - Paleta Prawa";
+				title = "Pozycje Przed Pobraniem - Prawa";
 			}
 		} else {
 			if (pallet.equals("left")) {
-				title = "Before Pickup - Left Pallet";
+				title = "Before Pickup - Left";
 			} else {
-				title = "Before Pickup - Right Pallet";
+				title = "Before Pickup - Right";
 			}
 		}
 		return title;
@@ -150,21 +135,14 @@ public class BeforeProgramNodeContribution implements ProgramNodeContribution{
 		String pallet = (this.pallet == 1) ? "left" : "right";
 		for (int i = 0; i < NUMBER_OF_POSITIONS; ++i) {
 			int n = i + 1;
-			String key = "PICKUP_" + String.valueOf(i);
+			String key = "POSE_" + String.valueOf(i);
 			Pose p = dataModel.get(key, this.emptyPose);
 			if (p != this.emptyPose) {
-				writer.appendLine("global boxPose_" + n + "_" + pallet + "_" + rNum + " = " + p.toString());
-				//System.out.println("global boxPose_" + n + "_" + pallet + "_" + rNum + " = " + p.toString());
+				writer.appendLine("global beforeBoxPose_" + n + "_" + pallet + "_" + rNum + " = " + p.toString());
 			} else {
-				writer.appendLine("global boxPose_" + n + "_" + pallet + "_" + rNum + " = p[ 0.4, -0.58, 0.59, 0.12, 3.14, 0.0 ]");
+				writer.appendLine("global beforeBoxPose_" + n + "_" + pallet + "_" + rNum + " = p[ 0.4, -0.58, 0.59, 0.12, 3.14, 0.0 ]");
 			}
 		}
-//		Pose p = dataModel.get("ABOVE_PALLET", this.emptyPose);
-//		if (p != this.emptyPose) {
-//			writer.appendLine("global above_" + pallet + "_" + rNum + " = " + p.toString());
-//		} else {
-//			writer.appendLine("global above_" + pallet + "_" + rNum + " = p[ 0.4, -0.58, 0.59, 0.12, 3.14, 0.0 ]");
-//		}
 
 		view.clipboardResetText();
 		view.enablePasteButton(false);
@@ -202,36 +180,8 @@ public class BeforeProgramNodeContribution implements ProgramNodeContribution{
 		});
 	}
 
-	public void deletePickUp(final String key) {
-		int i = Integer.parseInt(key.substring(key.length() - 1));
-		view.setDefinedIcon(i, false);
-		
-		this.undoRedoManager.recordChanges(new UndoableChanges() {
-
-			@Override
-			public void executeChanges() {
-				dataModel.set(key + "_DEF", false);
-			}
-			
-		});
-	}
-	
-	public void activateValveAction() {
-		valve_out = getDigitalIO("digital_out[0]");
-		if (valve_out.getValue()) {
-			valve_out.setValue(false);
-			this.view.valveButtonColor(false);
-		} else {
-			valve_out.setValue(true);
-			this.view.valveButtonColor(true);
-		}
-		
-		pressure_in = getAnalogIO("analog_out[0]");
-		System.out.println(pressure_in.getValueStr());
-	}
-
 	private void setPoseDefined(final String key) {
-		final int i = (key.contains("ABOVE")) ? NUMBER_OF_POSITIONS : Integer.parseInt(key.substring(key.length() - 1));
+		final int i = Integer.parseInt(key.substring(key.length() - 1));
 		
 		boolean check = dataModel.get(key + "_DEF", false);
 
@@ -241,48 +191,6 @@ public class BeforeProgramNodeContribution implements ProgramNodeContribution{
 			view.setDefinedIcon(i, false);
 		}
 			
-	}
-	
-	public DigitalIO getDigitalIO(String defaultName) {
-		Collection<DigitalIO> IOCollection = ioModel.getIOs(DigitalIO.class);
-		int IO_count = IOCollection.size();
-		if (IO_count > 0) {
-			Iterator<DigitalIO> itr = IOCollection.iterator();
-			while(itr.hasNext()) {
-				DigitalIO thisIO = itr.next();
-				String thisDefaultName = thisIO.getDefaultName();
-				if (thisDefaultName.contentEquals(defaultName)) {
-					return thisIO;
-				}
-			}
-		}
-		return null;
-	}
-	
-	private void printIONames() {
-		Collection<IO> IOCollection = ioModel.getIOs(IO.class);
-		if (IOCollection.size() > 0) {
-			Iterator<IO> itr = IOCollection.iterator();
-			while(itr.hasNext()) {
-				IO thisIO = itr.next();
-				System.out.println(thisIO.getDefaultName());
-			}
-		}
-	}
-	
-	public AnalogIO getAnalogIO(String defaultName) {
-		Collection<AnalogIO> IOCollection = ioModel.getIOs(AnalogIO.class);
-		if (IOCollection.size() > 0) {
-			Iterator<AnalogIO> itr = IOCollection.iterator();
-			while(itr.hasNext()) {
-				AnalogIO thisIO = itr.next();
-				String thisDefaultName = thisIO.getDefaultName();
-				if (thisDefaultName.contentEquals(defaultName)) {
-					return thisIO;
-				}
-			}
-		}
-		return null;
 	}
 
 	public void copy(){
@@ -301,7 +209,7 @@ public class BeforeProgramNodeContribution implements ProgramNodeContribution{
 			String palletStr = (this.pallet == 1) ? "Left" : "Right";
 			String contents = this.number + "," + palletStr + "\n";
 			for (int i = 0; i < NUMBER_OF_POSITIONS; ++i) {
-				String key = "PICKUP_" + String.valueOf(i);
+				String key = "POSE_" + String.valueOf(i);
 				Pose p = dataModel.get(key, this.emptyPose);
 				JointPositions q = dataModel.get(key + "_J", this.emptyJoints);
 				JointPosition qp[] = q.getAllJointPositions();
@@ -350,7 +258,7 @@ public class BeforeProgramNodeContribution implements ProgramNodeContribution{
 					while (readHead.hasNextLine()) {
 						String data = readHead.nextLine();
 						Pose p = poseFromString(data);
-						String key = "PICKUP_" + String.valueOf(i);
+						String key = "POSE_" + String.valueOf(i);
 						dataModel.set(key, p);
 
 						data = readHead.nextLine();

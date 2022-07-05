@@ -41,17 +41,11 @@ public class BeforeProgramNodeView implements SwingProgramNodeView<BeforeProgram
 
 	JButton setButtons[] = new JButton[NUMBER_OF_POSITIONS];
 	JButton moveButtons[] = new JButton[NUMBER_OF_POSITIONS];
-	JButton deleteButtons[] = new JButton[NUMBER_OF_POSITIONS];
 	JLabel descriptions[] = new JLabel[NUMBER_OF_POSITIONS];
 	JLabel defIcons[] = new JLabel[NUMBER_OF_POSITIONS];
 
-	JButton abovePalletSetButton = new JButton();
-	JButton abovePalletMoveButton = new JButton();
-	JLabel abovePalletDescription = new JLabel();
-	JLabel abovePalletDefined = new JLabel();
 	JLabel clipboardLabel = new JLabel();
 
-	JButton valveButton = new JButton();
 	JButton copyButton = new JButton();
 	JButton pasteButton = new JButton();
 
@@ -74,7 +68,7 @@ public class BeforeProgramNodeView implements SwingProgramNodeView<BeforeProgram
 				btn.setText("Set Position");
 			}
 			btn.setPreferredSize(new Dimension(BUTTON_WIDTH, BUTTON_HEIGHT));
-			btn.setActionCommand("PICKUP_" + String.valueOf(i));
+			btn.setActionCommand("POSE_" + String.valueOf(i));
 			btn.addActionListener(new ActionListener() {
 
 				@Override
@@ -93,7 +87,7 @@ public class BeforeProgramNodeView implements SwingProgramNodeView<BeforeProgram
 				btn1.setText("Move Here");
 			}
 			btn1.setPreferredSize(new Dimension(BUTTON_WIDTH, BUTTON_HEIGHT));
-			btn1.setActionCommand("PICKUP_" + String.valueOf(i));
+			btn1.setActionCommand("POSE_" + String.valueOf(i));
 			btn1.addActionListener(new ActionListener() {
 
 				@Override
@@ -104,26 +98,12 @@ public class BeforeProgramNodeView implements SwingProgramNodeView<BeforeProgram
 			});
 			moveButtons[i] = btn1;
 
-			//GENERATE DELETE BUTTONS
-			final JButton btn2 = new JButton(trashIcon);
-			btn2.setPreferredSize(new Dimension(BUTTON_HEIGHT, BUTTON_HEIGHT));
-			btn2.setActionCommand("PICKUP_" + String.valueOf(i));
-			btn2.addActionListener(new ActionListener() {
-				
-				@Override
-				public void actionPerformed(final ActionEvent e) {
-					provider.get().deletePickUp(e.getActionCommand());
-				}
-
-			});
-			deleteButtons[i] = btn2;
-
-			// GENERATE DESCRIPTIONS FOR EACH PICK UP POSITION
+			// GENERATE DESCRIPTIONS FOR EACH POSITION
 			final JLabel dsc = new JLabel();
 			if ("pl".equals(Locale.getDefault().getLanguage())) {
-				dsc.setText("Pozycja Pobrania " + n);
+				dsc.setText("Przed Pobraniem " + n);
 			} else {
-				dsc.setText("Pick Up Position " + n);
+				dsc.setText("Before Pickup " + n);
 			}
 			descriptions[i] = dsc;
 
@@ -132,7 +112,7 @@ public class BeforeProgramNodeView implements SwingProgramNodeView<BeforeProgram
 			defIcons[i] = defIcon;
 
 			// ADD THE BUTTONS AND DESCIRPTIONS TO THE VIEW
-			createPickUpRow(panel, c, descriptions, setButtons, moveButtons, deleteButtons, defIcons, i);
+			createPickUpRow(panel, c, descriptions, setButtons, moveButtons, defIcons, i);
 		}
 
 		// A LITTLE SEPARATOR FIRST
@@ -147,33 +127,6 @@ public class BeforeProgramNodeView implements SwingProgramNodeView<BeforeProgram
 		c.weightx = 1.0;
 		c.weighty = 0;
 		panel.add(spacer, c);
-
-		// ADD BUTTON TO ACTIVATE SUCTION
-		valveButton.setPreferredSize(new Dimension(220, BUTTON_HEIGHT));
-		if ("pl".equals(Locale.getDefault().getLanguage())) {
-			valveButton.setText("Włącz Ssanie");
-		} else {
-			valveButton.setText("Turn On Suction");
-		}
-		valveButton.setActionCommand("ACTIVATE_VALVE");
-		valveButton.addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(final ActionEvent e) {
-				provider.get().activateValveAction();
-			}
-		});
-
-		c.fill = GridBagConstraints.NONE;
-		c.ipadx = 0;
-		c.ipady = 0;
-		c.gridx = 0;
-		c.gridy++;
-		c.weighty = 1.0;
-		c.weightx = 1.0;
-		c.insets = new Insets(10, 0, 6, 0);
-		c.anchor = GridBagConstraints.CENTER;
-		panel.add(valveButton, c);
 
 		//	ADD BUTTONS TO COPY AND PASTE PICKUP POSES
 		//	LABEL IN THE MIDDLE TO SEE THE CONTENTS OF THE CLIPBOARD
@@ -232,7 +185,7 @@ public class BeforeProgramNodeView implements SwingProgramNodeView<BeforeProgram
 	}
 
 	private void createPickUpRow(final JPanel panel, final GridBagConstraints c, final JLabel[] descs,
-			final JButton[] setBtns, final JButton[] moveBtns, final JButton[] delBtns, final JLabel defIcns[], final int n) {
+			final JButton[] setBtns, final JButton[] moveBtns, final JLabel defIcns[], final int n) {
 		c.fill = GridBagConstraints.NONE;
 		c.ipadx = 0;
 		c.ipady = 0;
@@ -269,12 +222,6 @@ public class BeforeProgramNodeView implements SwingProgramNodeView<BeforeProgram
 		c.gridy = n;
 		c.weightx = 0.5;
 		panel.add(moveBtn, c);
-
-		final JButton delBtn = delBtns[n];
-		c.gridx = 4;
-		c.gridy = n;
-		c.weightx = 0.5;
-		panel.add(delBtn, c);
 	}
 
 	public void setDefinedIcon(final int i, final boolean isDef) {
@@ -282,24 +229,6 @@ public class BeforeProgramNodeView implements SwingProgramNodeView<BeforeProgram
 			defIcons[i].setIcon(okIcon);
 		} else {
 			defIcons[i].setIcon(nokIcon);
-		}
-	}
-
-	public void valveButtonColor(final boolean set) {
-		if (!set) {
-			valveButton.setBackground(new Color(86, 160, 211));
-			if ("pl".equals(Locale.getDefault().getLanguage())) {
-				valveButton.setText("Wyłącz Ssanie");
-			} else {
-				valveButton.setText("Turn Off Suction");
-			}
-		} else {
-			valveButton.setBackground(new Color(255, 255, 255));
-			if ("pl".equals(Locale.getDefault().getLanguage())) {
-				valveButton.setText("Włącz Ssanie");
-			} else {
-				valveButton.setText("Turn On Suction");
-			}
 		}
 	}
 
